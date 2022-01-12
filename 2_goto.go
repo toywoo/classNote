@@ -6,9 +6,12 @@ func main() {
 	var result int = 0
 	var i int = 1
 
-	for i < 1001 {
-		result += i
-		i++
+addOne:
+	result += i
+	i++
+
+	if i < 1001 {
+		goto addOne
 	}
 
 	fmt.Println(result)
