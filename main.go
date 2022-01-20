@@ -1,21 +1,34 @@
 package main
 
-import (
-	"fmt"
-)
-
-func add(op1 int, op2 int) int {
-	return op1 + op2
+type Location struct {
+	x int
+	y int
 }
 
-func minus(op1 int, op2 int) int {
-	return op1 - op2
+type Attacker struct {
+	name string
+	hp   int
+	atk  int
+	def  int
+	loca Location
+}
+
+func NewAttacker(name string) *Attacker {
+
+	return &Attacker{name: name, hp: 100, atk: 10, def: 8, loca: Location{x: 10, y: 10}}
+}
+
+func (attacker *Attacker) getAttack(oppAttacker Attacker) {
+	attacker.hp -= oppAttacker.atk - attacker.def
+	println(oppAttacker.name, "attacks", attacker.name)
 }
 
 func main() {
-	var num1 int = 1
-	var num2 int = 2
-	var result int = add(num1, num2) + minus(num1, num2)
+	attackLoc := Location{x: 10, y: 10}
+	attacker1 := Attacker{name: "attacker1", hp: 100, atk: 10, def: 8, loca: attackLoc}
+	attacker2 := Attacker{name: "attacker2", hp: 100, atk: 10, def: 8, loca: attackLoc}
+	attacker3 := NewAttacker("attacker3")
+	attacker1.getAttack(attacker2)
 
-	fmt.Println(result)
+	println(attacker1.hp, attacker2.hp, attacker3.def)
 }
