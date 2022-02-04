@@ -1,0 +1,42 @@
+<!DOCTYPE html>
+<html lang="ko">
+
+<head>
+    <meta charset="UTF-8">
+    <title>Note</title>
+    <link rel="stylesheet" href="/Client/note.css">
+</head>
+
+<body>
+    <ul id="navBar">
+        <li><br />
+            <div>
+                <input type="text" id="searchTxt" placeholder="글쓴이">
+                <button id="searchBtn">O</button>
+            </div>
+        </li><br /><br />
+        <li><a class="active" id="newBtn">New</a></li>
+    </ul>
+
+    <form method="post" id="textForm">
+        <br />
+        <div>
+            <input type="text" name="title" id="title" placeholder="제목" />
+            <span id="writtenTime"></span>
+        </div>
+        <div>
+            <input type="text" name="username" id="username" placeholder="글쓴이" />
+        </div>
+        <span id="errReporter"></span>
+        <br />
+
+        <iframe id="textCell" name="textCell"></iframe>
+        <button class="btn" id="saveBtn">저장</button><br /><br />
+        <button class="btn" id="deleteBtn">삭제</button>
+        <input type="text" name="content" hidden />
+    </form>
+
+    <script src="/Client/note.js"></script>
+</body>
+
+</html>
