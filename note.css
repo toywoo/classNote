@@ -1,0 +1,69 @@
+body {
+    margin: 0;
+}
+
+ul {
+    list-style-type: none;
+    margin: 0;
+    padding: 0;
+    width: 25%;
+    background-color: #f1f1f1;
+    position: fixed;
+    height: 100%;
+    overflow: auto;
+}
+
+li a {
+    display: block;
+    color: #000;
+    padding: 8px 16px;
+    text-decoration: none;
+}
+
+li a.active {
+    background-color: #04AA6D;
+    color: white;
+}
+
+li a:hover:not(.active) {
+    background-color: #555;
+    color: white;
+}
+
+#textForm {
+    margin-left: 25%;
+    padding: 1px 16px;
+}
+
+#title{
+    width: 50%;
+    font-size: medium;
+}
+
+#writtenTime{
+    float: right;
+}
+
+#textCell{
+    width: 100%;
+}
+
+form * {
+    margin-bottom: 8px;
+}
+
+.btn{
+    width: 100px;
+    height: 30px;
+    float: right;
+}
+
+#searchTxt{
+    width: 70%;
+    float: left;
+}
+
+#searchBtn{
+    width: 20%;
+    float: right;
+}

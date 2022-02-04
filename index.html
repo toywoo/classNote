@@ -1,0 +1,23 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <style>
+        h1{
+            color: azure;
+        }
+    </style>
+    <title>Hello World</title>
+</head>
+<body>
+    <h1 id="txt">Hello World</h1>
+    <button id="changeBtn">change</button>
+    <script>
+        var txt = document.getElementById("txt")
+        var changeBtn = document.getElementById("changeBtn")
+
+        changeBtn.addEventListener("click", function() {
+            txt.style.color = "red" 
+        })
+    </script>
+</body>
+</html>
