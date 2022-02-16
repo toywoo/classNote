@@ -1,3 +1,5 @@
+var navBar = document.getElementById("navBar");
+
 var errReporter = document.getElementById("errReporter");
 
 var title = document.getElementById("title");
@@ -7,6 +9,8 @@ var textCell = document.getElementById("textCell");
 var saveBtn = document.getElementById("saveBtn");
 var content = document.getElementsByName("content");
 var textForm = document.getElementById("textForm");
+
+const mainURL = "http://localhost:3002/"
 
 const errCase = {
   Server: "0",
@@ -93,12 +97,31 @@ function setNavContent() {
   });
 }
 
+// Get Content
+async function clickNavItem(item) {
+  const queryId = item.parentElement.value;
+  var textCellBody = textCell.contentDocument.getElementsByTagName("body")[0];
+  //
+  const getContentURL = mainURL + "/get/content?id=" + queryId;
+  await fetch(getContentURL, { method: "GET" }).then(function (res) {
+    res.json().then(function (sentContent) {
+      title.value = sentContent.TITLE;
+      username.value = sentContent.USERNAME;
+      // writtenTime.innerHTML = sentContent.CREATED_TIME;
+      // If you want to remove the digits after the decimal point...
+      writtenTime.innerHTML = st.split(".")[0].replace("T", " ")
+      textCellBody.innerHTML = sentContent.CONTENT;
+      content[0].value = "";
+    });
+  });
+}
+
 //Events
 // 로드시 에러 쿠키가 구워져 있는지 확인함
 window.addEventListener("load", function () {
   const errCode = getCookie("errorServer");
   errHandler(errCode);
-  setNavContent()
+  setNavContent();
   initValues();
   deleteCookie("errorServer");
 });

@@ -7,6 +7,7 @@ import (
 	"log"
 	"net/http"
 	"regexp"
+	"strconv"
 	"strings"
 
 	service "classNote/service"
@@ -156,10 +157,49 @@ func nav(res http.ResponseWriter, req *http.Request, db *service.DB) {
 	res.Write(*jsonBytes)
 }
 
+//		content
+func content(res http.ResponseWriter, req *http.Request, db *service.DB) { // /content?id=
+	type ContentInfo struct {
+		TITLE        string
+		USERNAME     string
+		CREATED_TIME string
+		CONTENT      string
+	}
+	var isErrConvert bool = false
+	urlQuery := req.URL.Query()
+	queriedId := urlQuery.Get("id")
+	queryId, errConvert := strconv.ParseInt(queriedId, 10, 64)
+
+	if errConvert != nil {
+		log.Println("Error: Fail str to int Becas, id is strange") // 이게 망가져서 ErrCookie를 내면 결국에 전체가 망가지는 것이므로 아래에 쿠키 전달
+		isErrConvert = true
+	}
+
+	var note ContentInfo
+
+	db.Connection.QueryRow(`SELECT title, username, created_time, content FROM public.note WHERE id=$1`, queryId).Scan(&note.TITLE, &note.USERNAME, &note.CREATED_TIME, &note.CONTENT)
+
+	jsonBytes, err := json.Marshal(note)
+	if err != nil || isErrConvert == true {
+		errCookie := http.Cookie{
+			Name:     "errorServer",
+			Value:    ERR_CLI_SERVER,
+			SameSite: http.SameSiteLaxMode,
+		}
+		res.Header().Set("Set-Cookie", errCookie.String())
+		http.Redirect(res, req, MAIN_URL, http.StatusSeeOther)
+	} else {
+		res.Header().Add("Content-Type", "application/json; charset=utf-8")
+		res.Write(jsonBytes)
+	}
+}
+
 func get(res http.ResponseWriter, req *http.Request, db *service.DB, splitedPath []string) {
 	switch splitedPath[2] {
 	case "nav":
 		nav(res, req, db)
+	case "content":
+		content(res, req, db)
 	default:
 		http.NotFound(res, req)
 	}
