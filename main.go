@@ -1,7 +1,10 @@
 package main
 
 import (
+	"database/sql"
+	"encoding/json"
 	"io/ioutil"
+	"log"
 	"net/http"
 	"regexp"
 	"strings"
@@ -21,6 +24,7 @@ const (
 	ERR_CLI_FORM_USERNAME = "2"
 )
 
+// index
 func index(res http.ResponseWriter, req *http.Request) {
 	res.Header().Add("Content-Type", "text/html; charset=utf-8")
 
@@ -32,6 +36,7 @@ func index(res http.ResponseWriter, req *http.Request) {
 	}
 }
 
+// save
 func save(res http.ResponseWriter, req *http.Request, db *service.DB) {
 	title := req.FormValue("title")
 	username := req.FormValue("username")
@@ -91,6 +96,75 @@ func save(res http.ResponseWriter, req *http.Request, db *service.DB) {
 	}
 }
 
+// get
+// 		nav
+func getNavContent(rows *sql.Rows) *[]byte {
+	type NavContents struct {
+		IDS    []int
+		TITLES []string
+		LEN    int
+	}
+
+	var ids []int
+	var titles []string
+	var len int = 0
+
+	var id int
+	var title string
+
+	for rows.Next() {
+		errRow := rows.Scan(&id, &title)
+		if errRow != nil {
+			log.Println("Error: Get new Row")
+		}
+
+		len++
+		ids = append(ids, id)
+		titles = append(titles, title)
+	}
+
+	var navContents NavContents
+	navContents.IDS = ids
+	navContents.TITLES = titles
+	navContents.LEN = len
+
+	jsonBytes, errJson := json.Marshal(navContents)
+	if errJson != nil {
+		log.Println("Error: Marshaling json")
+	}
+
+	return &jsonBytes // change dangling pointer?
+}
+
+func nav(res http.ResponseWriter, req *http.Request, db *service.DB) {
+	rows, errUsername := db.Connection.Query(`SELECT id, title FROM note`)
+	if errUsername != nil {
+		errCookie := http.Cookie{
+			Name:     "errorServer",
+			Value:    ERR_CLI_SERVER,
+			SameSite: http.SameSiteLaxMode,
+		}
+		res.Header().Set("Set-Cookie", errCookie.String())
+		http.Redirect(res, req, MAIN_URL, http.StatusSeeOther)
+	}
+
+	jsonBytes := getNavContent(rows)
+
+	rows.Close()
+
+	res.Header().Add("Content-Type", "application/json; charset=utf-8")
+	res.Write(*jsonBytes)
+}
+
+func get(res http.ResponseWriter, req *http.Request, db *service.DB, splitedPath []string) {
+	switch splitedPath[2] {
+	case "nav":
+		nav(res, req, db)
+	default:
+		http.NotFound(res, req)
+	}
+}
+
 func (handler *Handler) pathNav(res http.ResponseWriter, req *http.Request) {
 	var path = req.URL.Path
 	splitedPath := strings.Split(path, "/")
@@ -100,6 +174,9 @@ func (handler *Handler) pathNav(res http.ResponseWriter, req *http.Request) {
 		index(res, req)
 	case "save":
 		save(res, req, handler.db)
+
+	case "get":
+		get(res, req, handler.db, splitedPath)
 
 	default:
 		http.NotFound(res, req)
