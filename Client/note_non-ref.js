@@ -23,7 +23,9 @@ function deleteCookie(name) {
   document.cookie = name + "=; expires=Thu, 01 Jan 1999 00:00:10 GMT";
 }
 
-function errHandler(errCode) {
+// 로드시 에러 쿠키가 구워져 있는지 확인함
+window.addEventListener("load", function () {
+  const errCode = getCookie("errorServer");
   switch (errCode) {
     case errCase.Server:
       errReporter.innerText = "서버에 오류가 발생했습니다.";
@@ -43,26 +45,8 @@ function errHandler(errCode) {
       errReporter.innerText = "";
       break;
   }
-}
-
-function satisfyFormInput() {
-  if (title.value == "" || title.value.length > 255) {
-    errHandler(errCase.Form_Title);
-    return false;
-  } else if (username.value == "" || username.value.length > 10) {
-    errHandler(errCase.Form_Username);
-    return false;
-  } else {
-    return true;
-  }
-}
-
-// 로드시 에러 쿠키가 구워져 있는지 확인함
-window.addEventListener("load", function () {
-  const errCode = getCookie("errorServer");
-  errHandler(errCode);
   deleteCookie("errorServer");
-})
+});
 
 // content 입력을 가능하게 하는 코드
 textCell.addEventListener("mouseover", function () {
@@ -73,7 +57,13 @@ textCell.addEventListener("mouseover", function () {
 saveBtn.addEventListener("click", function () {
   var textCellBody = textCell.contentDocument.getElementsByTagName("body")[0];
 
-  if (satisfyFormInput()){
+  if (title.value == "" || title.value.length > 255) {
+    errReporter.innerText =
+      "제목이 255자 보다 길거나 없습니다. 다시 입력 해주세요.";
+  } else if (username.value == "" || username.value.length > 10) {
+    errReporter.innerText =
+      "글쓴이의 글자 길이가 10자 보다 길거나 없습니다. 다시 입력 해주세요.";
+  } else {
     content[0].value = textCellBody.innerHTML;
     textCellBody.innerHTML = "";
 

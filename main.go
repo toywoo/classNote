@@ -3,7 +3,16 @@ package main
 import (
 	"io/ioutil"
 	"net/http"
+	"regexp"
 	"strings"
+)
+
+const MAIN_URL = "http://localhost:3002"
+
+const (
+	ERR_CLI_SERVER        = "0"
+	ERR_CLI_FORM_TITLE    = "1"
+	ERR_CLI_FORM_USERNAME = "2"
 )
 
 func index(res http.ResponseWriter, req *http.Request) {
@@ -18,7 +27,39 @@ func index(res http.ResponseWriter, req *http.Request) {
 }
 
 func save(res http.ResponseWriter, req *http.Request) {
-	res.Write([]byte("save!"))
+	title := req.FormValue("title")
+	username := req.FormValue("username")
+	content := req.FormValue("content")
+
+	// script 제거
+	r := regexp.MustCompile(`<.*?script.*\/?>`)
+	content = r.ReplaceAllString(content, "")
+
+	if len(title) > 255 || len(title) == 0 {
+		errCookie := http.Cookie{
+			Name:     "errorServer",
+			Value:    ERR_CLI_FORM_TITLE,
+			SameSite: http.SameSiteLaxMode,
+		}
+		res.Header().Set("Set-Cookie", errCookie.String())
+		http.Redirect(res, req, MAIN_URL, http.StatusSeeOther)
+
+	} else if len(username) > 10 || len(username) < 1 {
+		errCookie := http.Cookie{
+			Name:     "errorServer",
+			Value:    ERR_CLI_FORM_USERNAME,
+			SameSite: http.SameSiteLaxMode,
+		}
+		res.Header().Set("Set-Cookie", errCookie.String())
+		http.Redirect(res, req, MAIN_URL, http.StatusSeeOther)
+
+	} else {
+
+		// SQL 구현부
+
+		http.Redirect(res, req, MAIN_URL, http.StatusSeeOther)
+
+	}
 }
 
 func handler(res http.ResponseWriter, req *http.Request) {
