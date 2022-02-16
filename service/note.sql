@@ -1,4 +1,4 @@
-CREATE DATABASE 'class_note_test';
+CREATE DATABASE 'class_note';
 
 CREATE TABLE note
 (

@@ -5,7 +5,13 @@ import (
 	"net/http"
 	"regexp"
 	"strings"
+
+	service "classNote/service"
 )
+
+type Handler struct {
+	db *service.DB
+}
 
 const MAIN_URL = "http://localhost:3002"
 
@@ -26,7 +32,7 @@ func index(res http.ResponseWriter, req *http.Request) {
 	}
 }
 
-func save(res http.ResponseWriter, req *http.Request) {
+func save(res http.ResponseWriter, req *http.Request, db *service.DB) {
 	title := req.FormValue("title")
 	username := req.FormValue("username")
 	content := req.FormValue("content")
@@ -54,15 +60,38 @@ func save(res http.ResponseWriter, req *http.Request) {
 		http.Redirect(res, req, MAIN_URL, http.StatusSeeOther)
 
 	} else {
+		isExistContent := db.IsExistContent(title, username)
 
-		// SQL 구현부
+		if isExistContent == 0 {
+			_, errInsertUser := db.Connection.Exec(`INSERT INTO note (username, title, content) VALUES ($1, $2, $3)`, username, title, content)
 
-		http.Redirect(res, req, MAIN_URL, http.StatusSeeOther)
+			if errInsertUser != nil {
+				errCookie := http.Cookie{
+					Name:     "errorServer",
+					Value:    ERR_CLI_SERVER,
+					SameSite: http.SameSiteLaxMode,
+				}
+				res.Header().Set("Set-Cookie", errCookie.String())
+				http.Redirect(res, req, MAIN_URL, http.StatusSeeOther)
+			}
+
+			http.Redirect(res, req, MAIN_URL, http.StatusSeeOther)
+		} else if isExistContent == 1 {
+			// Update
+		} else {
+			errCookie := http.Cookie{
+				Name:     "errorServer",
+				Value:    ERR_CLI_SERVER,
+				SameSite: http.SameSiteLaxMode,
+			}
+			res.Header().Set("Set-Cookie", errCookie.String())
+			http.Redirect(res, req, MAIN_URL, http.StatusSeeOther)
+		}
 
 	}
 }
 
-func handler(res http.ResponseWriter, req *http.Request) {
+func (handler *Handler) pathNav(res http.ResponseWriter, req *http.Request) {
 	var path = req.URL.Path
 	splitedPath := strings.Split(path, "/")
 
@@ -70,7 +99,7 @@ func handler(res http.ResponseWriter, req *http.Request) {
 	case "":
 		index(res, req)
 	case "save":
-		save(res, req)
+		save(res, req, handler.db)
 
 	default:
 		http.NotFound(res, req)
@@ -79,7 +108,12 @@ func handler(res http.ResponseWriter, req *http.Request) {
 }
 
 func main() {
+	handler := Handler{}
+
+	db := service.NewDBConnection()
+	handler.db = db
+
 	http.Handle("/Client/", http.StripPrefix("/Client", http.FileServer(http.Dir("./Client"))))
-	http.HandleFunc("/", handler)
+	http.HandleFunc("/", handler.pathNav)
 	http.ListenAndServe(":3002", nil)
 }
