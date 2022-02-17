@@ -1,4 +1,4 @@
-package main
+package handler
 
 import (
 	"database/sql"
@@ -14,7 +14,7 @@ import (
 )
 
 type Handler struct {
-	db *service.DB
+	Db *service.DB
 }
 
 const MAIN_URL = "http://localhost:3002"
@@ -24,6 +24,11 @@ const (
 	ERR_CLI_FORM_TITLE    = "1"
 	ERR_CLI_FORM_USERNAME = "2"
 )
+
+func NewHandler() *Handler {
+	db := service.NewDBConnection()
+	return &Handler{Db: db}
+}
 
 // index
 func index(res http.ResponseWriter, req *http.Request) {
@@ -267,7 +272,7 @@ func delete(res http.ResponseWriter, req *http.Request, db *service.DB) {
 	}
 }
 
-func (handler *Handler) pathNav(res http.ResponseWriter, req *http.Request) {
+func (handler *Handler) PathNav(res http.ResponseWriter, req *http.Request) {
 	var path = req.URL.Path
 	splitedPath := strings.Split(path, "/")
 
@@ -275,13 +280,13 @@ func (handler *Handler) pathNav(res http.ResponseWriter, req *http.Request) {
 	case "":
 		index(res, req)
 	case "save":
-		save(res, req, handler.db)
+		save(res, req, handler.Db)
 
 	case "get":
-		get(res, req, handler.db, splitedPath)
+		get(res, req, handler.Db, splitedPath)
 
 	case "delete":
-		delete(res, req, handler.db)
+		delete(res, req, handler.Db)
 
 	default:
 		http.NotFound(res, req)
@@ -289,13 +294,13 @@ func (handler *Handler) pathNav(res http.ResponseWriter, req *http.Request) {
 
 }
 
-func main() {
-	handler := Handler{}
+// func main() {
+// 	handler := Handler{}
 
-	db := service.NewDBConnection()
-	handler.db = db
+// 	db := service.NewDBConnection()
+// 	handler.db = db
 
-	http.Handle("/Client/", http.StripPrefix("/Client", http.FileServer(http.Dir("./Client"))))
-	http.HandleFunc("/", handler.pathNav)
-	http.ListenAndServe(":3002", nil)
-}
+// 	http.Handle("/Client/", http.StripPrefix("/Client", http.FileServer(http.Dir("./Client"))))
+// 	http.HandleFunc("/", handler.pathNav)
+// 	http.ListenAndServe(":3002", nil)
+// }
