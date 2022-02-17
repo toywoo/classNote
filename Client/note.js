@@ -7,8 +7,11 @@ var username = document.getElementById("username");
 var writtenTime = document.getElementById("writtenTime");
 var textCell = document.getElementById("textCell");
 
+var searchTxt = document.getElementById("searchTxt");
+var searchBtn = document.getElementById("searchBtn");
+
 var saveBtn = document.getElementById("saveBtn");
-var deleteBtn = document.getElementById("deleteBtn")
+var deleteBtn = document.getElementById("deleteBtn");
 var content = document.getElementsByName("content");
 var contentId = document.getElementById("contentId");
 var textForm = document.getElementById("textForm");
@@ -96,26 +99,31 @@ function initValues() {
 }
 
 //Navigation
+function createNavElement(navContents) {
+  var index = 0;
+
+  while (index < navContents.LEN) {
+    var newLi = document.createElement("li");
+    var newA = document.createElement("a");
+
+    newLi.value = navContents.IDS[index];
+    newLi.setAttribute("class", "navItem");
+
+    newA.innerHTML = navContents.TITLES[index];
+    newA.setAttribute("onclick", "clickNavItem(this)");
+    newLi.appendChild(newA);
+    navBar.appendChild(newLi);
+    index++;
+  }
+}
+
 function setNavContent() {
   const url = mainURL + "/get/nav/";
 
   fetch(url, { method: "GET" }).then(function (res) {
     res.json().then(function (navContents) {
-      var index = 0;
       if (navContents != null) {
-        while (index < navContents.LEN) {
-          var newLi = document.createElement("li");
-          var newA = document.createElement("a");
-
-          newLi.value = navContents.IDS[index];
-          newLi.setAttribute("class", "navItem");
-
-          newA.innerHTML = navContents.TITLES[index];
-          newA.setAttribute("onclick", "clickNavItem(this)");
-          newLi.appendChild(newA);
-          navBar.appendChild(newLi);
-          index++;
-        }
+        createNavElement(navContents);
       }
     });
   });
@@ -150,7 +158,7 @@ async function clickNavItem(item) {
   var textCellBody =
     frames["textCell"].contentDocument.getElementsByTagName("body")[0];
 
-  await updateContent(textCellBody)
+  await updateContent(textCellBody);
 
   const getContentURL = mainURL + "/get/content?id=" + queryId;
   await fetch(getContentURL, { method: "GET" }).then(function (res) {
@@ -203,8 +211,8 @@ saveBtn.addEventListener("click", function () {
 newBtn.addEventListener("click", async function () {
   var textCellBody =
     frames["textCell"].contentDocument.getElementsByTagName("body")[0];
-  
-  await updateContent(textCellBody)
+
+  await updateContent(textCellBody);
 
   initValues();
 });
@@ -216,4 +224,35 @@ deleteBtn.addEventListener("click", function () {
   } else {
     return;
   }
+});
+
+searchBtn.addEventListener("click", function () {
+  const queryUsername = searchTxt.value;
+  var url = mainURL;
+
+  if (queryUsername == "") {
+    url += "/get/nav/";
+  } else {
+    url += "/get/nav?username=" + queryUsername;
+  }
+
+  fetch(url, { method: "GET" }).then((res) => {
+    res.json().then((navContents) => {
+      if (navContents != null) {
+        var navItemAll = document.querySelectorAll(".navItem");
+        navItemAll.forEach((navItemAllElem) => navItemAllElem.remove());
+        
+        if (navContents.LEN == 0) {
+          var newLi = document.createElement("li");
+          var newA = document.createElement("a");
+          newLi.setAttribute("class", "navItem");
+          newA.innerHTML = "검색 결과가 없습니다.";
+          newLi.appendChild(newA);
+          navBar.appendChild(newLi);
+        }
+        
+        createNavElement(navContents)
+      }
+    });
+  });
 });

@@ -150,8 +150,20 @@ func getNavContent(rows *sql.Rows) *[]byte {
 	return &jsonBytes // change dangling pointer?
 }
 
-func nav(res http.ResponseWriter, req *http.Request, db *service.DB) {
-	rows, errUsername := db.Connection.Query(`SELECT id, title FROM note`)
+func nav(res http.ResponseWriter, req *http.Request, db *service.DB) { // /get/nav?username=
+	urlQuery := req.URL.Query()
+	queriedUsername := urlQuery.Get("username")
+
+	var rows *sql.Rows
+	var errUsername error
+
+	if urlQuery.Get("username") != "" {
+		rows, errUsername = db.Connection.Query(`SELECT id, title FROM note WHERE username=$1`, queriedUsername)
+
+	} else {
+		rows, errUsername = db.Connection.Query(`SELECT id, title content FROM note`)
+	}
+
 	if errUsername != nil {
 		errCookie := http.Cookie{
 			Name:     "errorServer",
