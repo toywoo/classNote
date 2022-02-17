@@ -11,8 +11,8 @@ import (
 )
 
 const (
-	UPDATE = iota
-	INSERT
+	FALSE = iota
+	TRUE
 	ERROR
 )
 
@@ -54,12 +54,12 @@ func (db *DB) IsExistContent(title string, username string, contentId string) in
 	var isExistContent bool
 	query := "SELECT EXISTS(SELECT * FROM public.note WHERE title=$1 AND username=$2 AND id=$3)"
 
-	_ = db.Connection.QueryRow(query, title, username, contentId).Scan(&isExistContent)
-	if isExistContent == true {
-		return UPDATE
-	} else if isExistContent == false {
-		return INSERT
-	} else {
+	err := db.Connection.QueryRow(query, title, username, contentId).Scan(&isExistContent)
+	if isExistContent {
+		return TRUE
+	} else if err != nil {
 		return ERROR
+	} else {
+		return FALSE
 	}
 }

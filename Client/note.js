@@ -8,6 +8,7 @@ var writtenTime = document.getElementById("writtenTime");
 var textCell = document.getElementById("textCell");
 
 var saveBtn = document.getElementById("saveBtn");
+var deleteBtn = document.getElementById("deleteBtn")
 var content = document.getElementsByName("content");
 var contentId = document.getElementById("contentId");
 var textForm = document.getElementById("textForm");
@@ -206,4 +207,13 @@ newBtn.addEventListener("click", async function () {
   await updateContent(textCellBody)
 
   initValues();
+});
+
+deleteBtn.addEventListener("click", function () {
+  if (confirm("정말 삭제 하시겠습니까?")) {
+    textForm.action = "/delete";
+    textForm.submit();
+  } else {
+    return;
+  }
 });

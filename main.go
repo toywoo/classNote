@@ -69,7 +69,7 @@ func save(res http.ResponseWriter, req *http.Request, db *service.DB) {
 	} else {
 		isExistContent := db.IsExistContent(title, username, contentId)
 
-		if isExistContent == service.INSERT {
+		if isExistContent == service.FALSE {
 			_, errInsertUser := db.Connection.Exec(`INSERT INTO note (username, title, content) VALUES ($1, $2, $3)`, username, title, content)
 
 			if errInsertUser != nil {
@@ -83,7 +83,7 @@ func save(res http.ResponseWriter, req *http.Request, db *service.DB) {
 			}
 
 			http.Redirect(res, req, MAIN_URL, http.StatusSeeOther)
-		} else if isExistContent == service.UPDATE {
+		} else if isExistContent == service.TRUE {
 			_, errUpdateUser := db.Connection.Exec(`UPDATE note SET content=$1 WHERE username=$2 AND title=$3 AND id=$4`, content, username, title, contentId)
 
 			if errUpdateUser != nil {
@@ -218,6 +218,43 @@ func get(res http.ResponseWriter, req *http.Request, db *service.DB, splitedPath
 	}
 }
 
+func delete(res http.ResponseWriter, req *http.Request, db *service.DB) {
+	title := req.FormValue("title")
+	username := req.FormValue("username")
+	contentId := req.FormValue("id")
+
+	var errCookie http.Cookie
+
+	isExistContent := db.IsExistContent(title, username, contentId)
+	if isExistContent == service.FALSE {
+		// change success cookie?
+		http.Redirect(res, req, MAIN_URL, http.StatusSeeOther)
+
+	} else if isExistContent == service.TRUE {
+		_, errInsertUser := db.Connection.Exec(`DELETE FROM note WHERE title=$1 AND username=$2 AND id=$3`, title, username, contentId)
+
+		if errInsertUser != nil {
+			errCookie = http.Cookie{
+				Name:     "errorServer",
+				Value:    ERR_CLI_SERVER,
+				SameSite: http.SameSiteLaxMode,
+			}
+			res.Header().Set("Set-Cookie", errCookie.String())
+			http.Redirect(res, req, MAIN_URL, http.StatusInternalServerError)
+		}
+
+		http.Redirect(res, req, MAIN_URL, http.StatusSeeOther)
+	} else {
+		errCookie = http.Cookie{
+			Name:     "errorServer",
+			Value:    ERR_CLI_SERVER,
+			SameSite: http.SameSiteLaxMode,
+		}
+		res.Header().Set("Set-Cookie", errCookie.String())
+		http.Redirect(res, req, MAIN_URL, http.StatusInternalServerError)
+	}
+}
+
 func (handler *Handler) pathNav(res http.ResponseWriter, req *http.Request) {
 	var path = req.URL.Path
 	splitedPath := strings.Split(path, "/")
@@ -230,6 +267,9 @@ func (handler *Handler) pathNav(res http.ResponseWriter, req *http.Request) {
 
 	case "get":
 		get(res, req, handler.db, splitedPath)
+
+	case "delete":
+		delete(res, req, handler.db)
 
 	default:
 		http.NotFound(res, req)
