@@ -1,21 +1,28 @@
 var navBar = document.getElementById("navBar");
-
+var newBtn = document.getElementById("newBtn");
 var errReporter = document.getElementById("errReporter");
 
 var title = document.getElementById("title");
 var username = document.getElementById("username");
+var writtenTime = document.getElementById("writtenTime");
 var textCell = document.getElementById("textCell");
 
 var saveBtn = document.getElementById("saveBtn");
 var content = document.getElementsByName("content");
+var contentId = document.getElementById("contentId");
 var textForm = document.getElementById("textForm");
 
-const mainURL = "http://localhost:3002/"
+const mainURL = "http://localhost:3002";
 
 const errCase = {
   Server: "0",
   Form_Title: "1",
   Form_Username: "2",
+};
+
+const satisfyForm = {
+  check: 0,
+  do: 1,
 };
 
 //Cookie
@@ -51,23 +58,39 @@ function errHandler(errCode) {
   }
 }
 
-function satisfyFormInput() {
+function satisfyFormInput(mode) {
+  // mode check: only condition check, do: + temporary saving process
   if (title.value == "" || title.value.length > 255) {
-    errHandler(errCase.Form_Title);
-    return false;
+    if (mode == satisfyForm.check) {
+      errHandler(errCase.Form_Title);
+      return false;
+    } else {
+      title.value = "temp";
+    }
   } else if (username.value == "" || username.value.length > 10) {
-    errHandler(errCase.Form_Username);
-    return false;
+    if (mode == satisfyForm.check) {
+      errHandler(errCase.Form_Username);
+      return false;
+    } else {
+      title.value = "Guest";
+    }
   } else {
     return true;
   }
+}
+
+function isInContent(textCellBodyInHTML) {
+  const isContent = textCellBodyInHTML == "" || textCellBodyInHTML == "<br>"; // true: 내용 없음
+  return !isContent;
 }
 
 function initValues() {
   title.value = "";
   username.value = "";
   writtenTime.innerHTML = "";
-  textCell.contentDocument.getElementsByTagName("body")[0].innerHTML = "";
+  frames["textCell"].contentDocument.getElementsByTagName("body")[0].innerHTML =
+    "";
+  contentId.value = -1;
   content[0].value = "";
 }
 
@@ -97,11 +120,37 @@ function setNavContent() {
   });
 }
 
+// Update content
+async function updateContent(textCellBody) {
+  if (isInContent(textCellBody.innerHTML)) {
+    // 내용 있음
+    satisfyFormInput(satisfyForm.do);
+    const saveURl = mainURL + "/save/";
+    await fetch(saveURl, {
+      method: "POST",
+      cache: "no-cache",
+      headers: { "Content-Type": "application/x-www-form-urlencoded" },
+      body:
+        "title=" +
+        title.value +
+        "&username=" +
+        username.value +
+        "&content=" +
+        textCellBody.innerHTML +
+        "&id=" +
+        contentId.value,
+    });
+  }
+}
+
 // Get Content
 async function clickNavItem(item) {
   const queryId = item.parentElement.value;
-  var textCellBody = textCell.contentDocument.getElementsByTagName("body")[0];
-  //
+  var textCellBody =
+    frames["textCell"].contentDocument.getElementsByTagName("body")[0];
+
+  await updateContent(textCellBody)
+
   const getContentURL = mainURL + "/get/content?id=" + queryId;
   await fetch(getContentURL, { method: "GET" }).then(function (res) {
     res.json().then(function (sentContent) {
@@ -109,8 +158,12 @@ async function clickNavItem(item) {
       username.value = sentContent.USERNAME;
       // writtenTime.innerHTML = sentContent.CREATED_TIME;
       // If you want to remove the digits after the decimal point...
-      writtenTime.innerHTML = st.split(".")[0].replace("T", " ")
+      writtenTime.innerHTML = sentContent.CREATED_TIME.split(".")[0].replace(
+        "T",
+        " "
+      );
       textCellBody.innerHTML = sentContent.CONTENT;
+      contentId.value = queryId;
       content[0].value = "";
     });
   });
@@ -133,13 +186,24 @@ textCell.addEventListener("mouseover", function () {
 
 // 입력 데이터 조건 검사 및 POST /save
 saveBtn.addEventListener("click", function () {
-  var textCellBody = textCell.contentDocument.getElementsByTagName("body")[0];
+  var textCellBody =
+    frames["textCell"].contentDocument.getElementsByTagName("body")[0];
 
-  if (satisfyFormInput()) {
+  if (satisfyFormInput(satisfyForm.check)) {
     content[0].value = textCellBody.innerHTML;
     textCellBody.innerHTML = "";
 
     textForm.action = "/save";
     textForm.submit();
   }
+});
+
+// 새로운 메모 만들기 == 그냥 저장하고 양식 비우기
+newBtn.addEventListener("click", async function () {
+  var textCellBody =
+    frames["textCell"].contentDocument.getElementsByTagName("body")[0];
+  
+  await updateContent(textCellBody)
+
+  initValues();
 });

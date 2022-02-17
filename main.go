@@ -42,6 +42,7 @@ func save(res http.ResponseWriter, req *http.Request, db *service.DB) {
 	title := req.FormValue("title")
 	username := req.FormValue("username")
 	content := req.FormValue("content")
+	contentId := req.FormValue("id")
 
 	// script 제거
 	r := regexp.MustCompile(`<.*?script.*\/?>`)
@@ -66,9 +67,9 @@ func save(res http.ResponseWriter, req *http.Request, db *service.DB) {
 		http.Redirect(res, req, MAIN_URL, http.StatusSeeOther)
 
 	} else {
-		isExistContent := db.IsExistContent(title, username)
+		isExistContent := db.IsExistContent(title, username, contentId)
 
-		if isExistContent == 0 {
+		if isExistContent == service.INSERT {
 			_, errInsertUser := db.Connection.Exec(`INSERT INTO note (username, title, content) VALUES ($1, $2, $3)`, username, title, content)
 
 			if errInsertUser != nil {
@@ -82,8 +83,20 @@ func save(res http.ResponseWriter, req *http.Request, db *service.DB) {
 			}
 
 			http.Redirect(res, req, MAIN_URL, http.StatusSeeOther)
-		} else if isExistContent == 1 {
-			// Update
+		} else if isExistContent == service.UPDATE {
+			_, errUpdateUser := db.Connection.Exec(`UPDATE note SET content=$1 WHERE username=$2 AND title=$3 AND id=$4`, content, username, title, contentId)
+
+			if errUpdateUser != nil {
+				errCookie := http.Cookie{
+					Name:     "errorServer",
+					Value:    ERR_CLI_SERVER,
+					SameSite: http.SameSiteLaxMode,
+				}
+				res.Header().Set("Set-Cookie", errCookie.String())
+				http.Redirect(res, req, MAIN_URL, http.StatusSeeOther)
+			}
+
+			http.Redirect(res, req, MAIN_URL, http.StatusSeeOther)
 		} else {
 			errCookie := http.Cookie{
 				Name:     "errorServer",

@@ -11,8 +11,8 @@ import (
 )
 
 const (
-	FALSE = iota
-	TRUE
+	UPDATE = iota
+	INSERT
 	ERROR
 )
 
@@ -50,16 +50,16 @@ func NewDBConnection() *DB {
 	return &DB{connection} // don't worry dangling pointer
 } // steady connection 이 performance 관점에서 좋음
 
-func (db *DB) IsExistContent(title string, username string) int {
+func (db *DB) IsExistContent(title string, username string, contentId string) int {
 	var isExistContent bool
-	query := "SELECT EXISTS(SELECT * FROM public.note WHERE title=$1 AND username=$2)"
+	query := "SELECT EXISTS(SELECT * FROM public.note WHERE title=$1 AND username=$2 AND id=$3)"
 
-	err := db.Connection.QueryRow(query, title, username).Scan(&isExistContent)
-	if err != nil {
-		return ERROR
-	} else if isExistContent {
-		return TRUE
+	_ = db.Connection.QueryRow(query, title, username, contentId).Scan(&isExistContent)
+	if isExistContent == true {
+		return UPDATE
+	} else if isExistContent == false {
+		return INSERT
 	} else {
-		return FALSE
+		return ERROR
 	}
 }
